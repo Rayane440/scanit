@@ -16,6 +16,15 @@
       border-radius: 12px;
     }
     #result { font-size: 1.5rem; font-weight: bold; margin-top: 1rem; }
+    #barcodeInput {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 250px;
+    }
   </style>
 </head>
 <body>
@@ -23,6 +32,7 @@
   <video id="video" width="320" height="240" autoplay muted></video>
   <canvas id="captureCanvas" width="320" height="240" style="display: none;"></canvas>
   <canvas id="referenceCanvas" width="320" height="240" style="display: none;"></canvas>
+  <input type="text" id="barcodeInput" placeholder="Entrez le code-barres...">
   <div id="result">⏳ Chargement...</div>
 
   <script>
@@ -32,6 +42,7 @@
     const refCanvas = document.getElementById('referenceCanvas');
     const refCtx = refCanvas.getContext('2d');
     const resultDiv = document.getElementById('result');
+    const barcodeInput = document.getElementById('barcodeInput');
 
     let attempts = 0;
     const maxAttempts = 3;
@@ -83,8 +94,8 @@
       } else {
         attempts++;
         if (attempts >= maxAttempts) {
-          resultDiv.innerHTML = "❌ 3 échecs. Propose scan du code-barres 🔍";
-          // 👉 ici tu peux ajouter un champ code-barres
+          resultDiv.innerHTML = "❌ 3 échecs. Veuillez entrer le code-barres ci-dessous 🔍";
+          barcodeInput.style.display = 'inline-block';
         } else {
           resultDiv.innerHTML = `❌ Non reconnu (tentative ${attempts}/${maxAttempts}) <br>Similitude : ${(similarity * 100).toFixed(2)}%`;
         }
