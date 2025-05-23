@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ScanIt - Comparaison image</title>
+  <style>
+    body {
+      font-family: 'Arial';
+      text-align: center;
+      background: #fafafa;
+      padding: 2rem;
+    }
+    canvas, video {
+      display: block;
+      margin: 1rem auto;
+      border-radius: 12px;
+    }
+    #result { font-size: 1.5rem; font-weight: bold; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>🔍 ScanIt - Détection Produit</h1>
+  <video id="video" width="320" height="240" autoplay muted></video>
+  <canvas id="captureCanvas" width="320" height="240" style="display: none;"></canvas>
+  <canvas id="referenceCanvas" width="320" height="240" style="display: none;"></canvas>
+  <div id="result">⏳ Chargement...</div>
+
+  <script>
+    const video = document.getElementById('video');
+    const captureCanvas = document.getElementById('captureCanvas');
+    const captureCtx = captureCanvas.getContext('2d');
+    const refCanvas = document.getElementById('referenceCanvas');
+    const refCtx = refCanvas.getContext('2d');
+    const resultDiv = document.getElementById('result');
+
+    let attempts = 0;
+    const maxAttempts = 3;
+    const matchThreshold = 0.9;
+
+    // 1. Charger l'image de référence dans le canvas
+    const refImage = new Image();
+    refImage.src = 'mario-UHU.png';
+    refImage.onload = () => {
+      refCtx.drawImage(refImage, 0, 0, 320, 240);
+      resultDiv.textContent = "📷 Scannez votre produit maintenant...";
+    };
+
+    // 2. Lancer la caméra
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+        setInterval(scanAndCompare, 4000); // toutes les 4 sec
+      })
+      .catch(err => {
+        resultDiv.textContent = "❌ Caméra non accessible.";
+      });
+
+    // 3. Fonction de scan + comparaison
+    function scanAndCompare() {
+      if (attempts >= maxAttempts) return;
+
+      captureCtx.drawImage(video, 0, 0, 320, 240);
+      const userData = captureCtx.getImageData(0, 0, 320, 240).data;
+      const refData = refCtx.getImageData(0, 0, 320, 240).data;
+
+      let matchCount = 0;
+      let totalPixels = 320 * 240;
+
+      for (let i = 0; i < userData.length; i += 4) {
+        let rDiff = Math.abs(userData[i] - refData[i]);
+        let gDiff = Math.abs(userData[i + 1] - refData[i + 1]);
+        let bDiff = Math.abs(userData[i + 2] - refData[i + 2]);
+
+        if (rDiff < 40 && gDiff < 40 && bDiff < 40) {
+          matchCount++;
+        }
+      }
+
+      let similarity = matchCount / totalPixels;
+
+      if (similarity >= matchThreshold) {
+        resultDiv.innerHTML = `✅ Produit reconnu ! <br>Ressemblance : ${(similarity * 100).toFixed(2)}%`;
+      } else {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          resultDiv.innerHTML = "❌ 3 échecs. Propose scan du code-barres 🔍";
+          // 👉 ici tu peux ajouter un champ code-barres
+        } else {
+          resultDiv.innerHTML = `❌ Non reconnu (tentative ${attempts}/${maxAttempts}) <br>Similitude : ${(similarity * 100).toFixed(2)}%`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
